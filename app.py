@@ -179,7 +179,7 @@ if st.session_state.stage>=3:
         with st.spinner("Translating complaint theme into deterministic SQLite query..."): 
           # Call your Business Logic module
           st.session_state.sql_query= ae.generate_diagnostic_sql(st.session_state.selected_category)
-    st.code(st.session_state.sql_query, language='sql')
+    st.code(st.session_state.sql_query, language='sql',wrap_lines= True)
 
     if st.session_state.stage== 3:
         col1, col2, col3 = st.columns([1,2,1])
@@ -197,7 +197,7 @@ if st.session_state.stage >= 4:
         with st.spinner("Querying fintech_product.db....."):
             st.session_state.sql_results= db.execute_sql_query("fintech_product.db",st.session_state.sql_query)
     
-    st.dataframe(st.session_state.sql_results, width="stretch")
+    st.dataframe(st.session_state.sql_results, width="stretch", hide_index= True)
 
     if st.session_state.stage==4:
         col1,col2,col3= st.columns([1,2,1])
