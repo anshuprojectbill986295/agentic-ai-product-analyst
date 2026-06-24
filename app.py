@@ -91,44 +91,69 @@ elif st.session_state.stage== 1:
         time.sleep(1)
         st.session_state.stage= 2
         st.rerun()
-    #----------PATH B LIVE MODE----------
+   #----------PATH B LIVE MODE----------
     elif st.session_state.mode== "Live":
         try:
-            raw_df= pd.read_csv("raw_fintech_reviews.csv")
-            total_reviews= len(raw_df)
-            progress_bar= st.progress(0)
-            status_text= st.empty()
-            live_table= st.empty()
+            raw_df = pd.read_csv("raw_fintech_reviews.csv")
+            total_reviews = len(raw_df)
+            
+            progress_bar = st.progress(0)
+            status_text = st.empty()
+            live_table = st.empty()
 
-# --- NEW ADDITION: Waking Up Message ---
-            status_text.info("⏳ Waking up LLM and allocating VRAM... Please wait 15-20 seconds for the first inference.")
-            # ---------------------------------------
-            categories= []
-            display_data=[]
+            status_text.info("⏳ Waking up LLM... Initiating maximum-speed inference.")
+            
+            categories = []
+            display_data = []
 
-            for index,row in raw_df.iterrows():
-                review_text= row.get("content")
+            for index, row in raw_df.iterrows():
+                review_text = row.get("content")
                 
-                # Calling your clean Business Logic Layer!
-                category= ae.categorize_review(review_text)
+                # --- TRUE EXPONENTIAL BACKOFF LOOP ---
+                max_retries = 6
+                success = False
+                
+                for attempt in range(max_retries):
+                    try:
+                        category = ae.categorize_review(review_text)
+                        success = True
+                        break # It worked! Immediately exit the retry loop and move to the next row.
+                        
+                    except Exception as api_error:
+                        if "429" in str(api_error) or "rate" in str(api_error).lower():
+                            # Math: Wait 2s, 4s, 8s, 16s, 32s, 64s depending on the attempt
+                            wait_time = 2 ** (attempt + 1) 
+                            status_text.warning(f"🚦 API Limit Hit. Resuming in {wait_time}s... (Retry {attempt+1}/{max_retries})")
+                            time.sleep(wait_time) 
+                        else:
+                            raise api_error
+                
+                # If the server is totally dead after 6 escalating retries, fail safely.
+                if not success:
+                    st.error("❌ The AI API is currently overloaded. Please use Enterprise Demo Mode instead.")
+                    st.stop()
+                # -------------------------------------
+
                 categories.append(category)
-
                 short_text= review_text[:75]+'...' if len(review_text)>75 else review_text
-
                 display_data.append({"Raw Review": review_text, "AI Category": category})
 
-                progress_pct= int(((index+1)/total_reviews)*100)
+                # Update UI
+                progress_pct = int(((index+1)/total_reviews)*100)
                 progress_bar.progress(progress_pct)
                 status_text.text(f"Live Mode: Classifying review {index+1} of {total_reviews}....")
-                live_table.dataframe(pd.DataFrame(display_data), width="stretch")
+                
+                # Only render the last 5 rows so the web browser doesn't lag
+                live_table.dataframe(pd.DataFrame(display_data[-5:]), width="stretch")
 
             raw_df['ai_complaint_category']= categories
-            raw_df.to_csv("categorized_reviews.csv",index= False)
+            raw_df.to_csv("categorized_reviews.csv", index=False)
 
-            st.success("✅ Live Categorization Complete!")
-            time.sleep(1)
+            st.success("✅ Live Categorization of all 500 rows Complete!")
+            time.sleep(2)
             st.session_state.stage= 2
             st.rerun()
+            
         except Exception as e:
             st.error(f"Categorization Error in Pipeline: {e}")
             if st.button("Restart"):
