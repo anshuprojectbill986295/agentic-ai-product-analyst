@@ -144,7 +144,7 @@ elif st.session_state.stage== 1:
                 status_text.text(f"Live Mode: Classifying review {index+1} of {total_reviews}....")
                 
                 # Only render the last 5 rows so the web browser doesn't lag
-                live_table.dataframe(pd.DataFrame(display_data), width="stretch")
+                live_table.dataframe(pd.DataFrame(display_data[-5:]), width="stretch")
 
             raw_df['ai_complaint_category']= categories
             raw_df.to_csv("categorized_reviews.csv", index=False)
