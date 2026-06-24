@@ -1,9 +1,11 @@
 import os
-import ollama
+
 try:
-    from groq import Groq
+    import ollama
 except ImportError:
-    pass # Groq is optional for local development
+    ollama = None
+
+from groq import Groq
 
 def call_llm(system_prompt, user_message, temperature=0.0, max_output_tokens= None):
     """Routes LLM requests to Groq (Production) or Ollama (Development)"""
@@ -27,6 +29,11 @@ def call_llm(system_prompt, user_message, temperature=0.0, max_output_tokens= No
         options={"temperature":temperature}
         if max_output_tokens is not None:
             options["num_predict"]= max_output_tokens
+        if ollama is None:
+            raise Exception(
+                "GROQ_API_KEY not configured and Ollama not available."
+            )
+
         response = ollama.chat(
             model="llama3",
             messages=[
