@@ -15,7 +15,7 @@ def call_llm(system_prompt, user_message, temperature=0.0, max_output_tokens= No
             kwargs["max_tokens"]= max_output_tokens
         client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
         response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="llama-3.1-8b-instant",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_message}
