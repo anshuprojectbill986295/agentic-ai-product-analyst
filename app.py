@@ -5,8 +5,8 @@ import time
 import analytics_engine as ae
 import db_query_service as db
 
-st.set_page_config(page_title="AI Product Analyst Copilot", layout="wide", page_icon="🤖")
-st.title("🤖 AI Product Analyst Copilot")
+st.set_page_config(page_title="Agentic AI Product Analyst", layout="wide", page_icon="🤖")
+st.title("🤖 Agentic AI Product Analyst")
 #---------------------------------------------------------------
 #---- Initialize Session State---------------------
 #---------------------------------------------------------------
@@ -45,7 +45,7 @@ def auto_advance_button(next_stage, text, delay=12):
 # STAGE 0: LANDING & TRANSPARENCY
 # ==========================================
 st.markdown("This AI agent translates unstructured qualitative user feedback into deterministic SQL to find quantitative backend root causes.")
-st.info("ℹ️ Architecture Notice: Because production databases are highly confidential and schema metrics vary violently between companies, this Copilot is engineered against a fixed, highly-normalized synthetic database (fintech_product.db).")
+st.info("ℹ️ Architecture Notice: Because production databases are highly confidential and schema metrics vary violently between companies, this AI is engineered against a fixed, highly-normalized synthetic database (fintech_product.db).")
 
 if st.session_state.stage== 0:
     st.markdown("### 📥 Raw Input Data Preview (raw_fintech_reviews.csv)")
@@ -174,7 +174,7 @@ if st.session_state.stage>= 2:
 
 if st.session_state.stage>=3:
     st.divider()
-    st.subheader(f"🧠 AI Copilot SQL Generation: {st.session_state.selected_category}")
+    st.subheader(f"🧠 Agentic AI SQL Generation: {st.session_state.selected_category}")
     # Only hit the LLM if we haven't already generated the query for this session
     if st.session_state.sql_query is None:
         with st.spinner("Translating complaint theme into deterministic SQLite query..."): 
