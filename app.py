@@ -60,15 +60,15 @@ if st.session_state.stage== 0:
 
     with col1:
         st.subheader("Option 1: Live AI Pipeline")
-        st.markdown("Runs full LLM categorizaton line by line.")
-        if st.button("🚀 Run Live Pipeline (~30 mins)",width="stretch"):
+        st.markdown("Runs a real-time 10-row sample to demonstrate the live LLM routing. *(Capped to respect Groq API cloud rate limits).*")
+        if st.button("🚀 Run Live Pipeline ",width="stretch"):
             st.session_state.mode= "Live"
             st.session_state.stage=1
             st.rerun()
 
     with col2:
         st.subheader("Option 2: Enterprise Demo Mode")
-        st.markdown("Bypasses 30-min ETL bottleneck using pre-processsed data.")
+        st.markdown("Instantly loads the full dataset. **Engineering Note:** To overcome cloud API rate limits, these 500 rows were pre-categorized offline using a Local LLM.")
         if st.button("⚡ Run Demo Mode (Instant)",width="stretch", type="primary"):
             st.session_state.mode= "Demo"
             st.session_state.stage= 1
@@ -94,9 +94,9 @@ elif st.session_state.stage== 1:
    #----------PATH B LIVE MODE----------
     elif st.session_state.mode== "Live":
         try:
-            raw_df = pd.read_csv("raw_fintech_reviews.csv")
-            total_reviews = len(raw_df)
             
+            raw_df = pd.read_csv("raw_fintech_reviews.csv").head(10)
+            total_reviews = len(raw_df)            
             progress_bar = st.progress(0)
             status_text = st.empty()
             live_table = st.empty()
@@ -108,32 +108,7 @@ elif st.session_state.stage== 1:
 
             for index, row in raw_df.iterrows():
                 review_text = row.get("content")
-                
-                # --- TRUE EXPONENTIAL BACKOFF LOOP ---
-                max_retries = 6
-                success = False
-                
-                for attempt in range(max_retries):
-                    try:
-                        category = ae.categorize_review(review_text)
-                        success = True
-                        break # It worked! Immediately exit the retry loop and move to the next row.
-                        
-                    except Exception as api_error:
-                        if "429" in str(api_error) or "rate" in str(api_error).lower():
-                            # Math: Wait 2s, 4s, 8s, 16s, 32s, 64s depending on the attempt
-                            wait_time = 2 ** (attempt + 1) 
-                            status_text.warning(f"🚦 API Limit Hit. Resuming in {wait_time}s... (Retry {attempt+1}/{max_retries})")
-                            time.sleep(wait_time) 
-                        else:
-                            raise api_error
-                
-                # If the server is totally dead after 6 escalating retries, fail safely.
-                if not success:
-                    st.error("❌ The AI API is currently overloaded. Please use Enterprise Demo Mode instead.")
-                    st.stop()
-                # -------------------------------------
-
+                category = ae.categorize_review(review_text)
                 categories.append(category)
                 short_text= review_text[:75]+'...' if len(review_text)>75 else review_text
                 display_data.append({"Raw Review": review_text, "AI Category": category})
@@ -147,9 +122,10 @@ elif st.session_state.stage== 1:
                 live_table.dataframe(pd.DataFrame(display_data[-6:]), width="stretch")
 
             raw_df['ai_complaint_category']= categories
-            raw_df.to_csv("categorized_reviews.csv", index=False)
+            raw_df.to_csv("live_categorized_reviews.csv", index=False)
 
-            st.success("✅ Live Categorization of all 500 rows Complete!")
+            st.success("✅ Live Categorization of Sample Complete!")
+            st.info("📊 Loading the full 500-row enterprise dataset (pre-categorized via a Local LLM) for meaningful SQL diagnostics...")
             time.sleep(2)
             st.session_state.stage= 2
             st.rerun()
@@ -191,7 +167,7 @@ if st.session_state.stage>= 2:
                 st.markdown("<br>",unsafe_allow_html= True)
                 auto_advance_button(3,f"🔍 Diagnose {st.session_state.selected_category}", delay= 15)
     except Exception as e:
-        st.error(f"Faied to load categorization data: {e}")
+        st.error(f"Failed to load categorization data: {e}")
 # ==========================================
 # STAGE 3: SQL GENERATION
 # ==========================================
