@@ -126,7 +126,7 @@ elif st.session_state.stage== 1:
 
             st.success("✅ Live Categorization of Sample Complete!")
             st.info("📊 Loading the full 500-row enterprise dataset (pre-categorized via a Local LLM) for meaningful SQL diagnostics...")
-            time.sleep(2)
+            time.sleep(8)
             st.session_state.stage= 2
             st.rerun()
             
